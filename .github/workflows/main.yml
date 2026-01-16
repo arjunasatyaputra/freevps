@@ -23,98 +23,15 @@ jobs:
       - name: Prepare Tailscale directory
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path "C:\\ProgramData\\Tailscale" -Force | Out-Null
+          New-Item -ItemType Directory -Path "C:\ProgramData\Tailscale" -Force | Out-Null
           Write-Host "Tailscale directory prepared"
           
-      # === INSTALL DOCKER (MODIFIED VERSION) ===
-      - name: Install Docker Desktop
-        shell: pwsh
-        run: |
-          $dockerUrl = "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe"
-          $installerPath = "$env:TEMP\\docker_installer.exe"
-          
-          # Download installer
-          Invoke-WebRequest -Uri $dockerUrl -OutFile $installerPath
-          
-          # Silent install
-          Start-Process -FilePath $installerPath -ArgumentList "install --quiet --accept-license" -Wait
-          
-          # Cleanup
-          Remove-Item $installerPath -Force
-          Write-Host "Docker Desktop installed successfully"
-          
-          # Handle Docker service restart without system reboot
-          try {
-              # Stop Docker service if running
-              Stop-Service -Name com.docker.service -Force -ErrorAction SilentlyContinue
-              
-              # Wait for service to stop
-              Start-Sleep -Seconds 5
-              
-              # Start Docker service
-              Start-Service -Name com.docker.service
-              
-              # Wait for service to start properly
-              $serviceStatus = (Get-Service -Name com.docker.service).Status
-              $retries = 0
-              while ($serviceStatus -ne "Running" -and $retries -lt 10) {
-                  Start-Sleep -Seconds 10
-                  $serviceStatus = (Get-Service -Name com.docker.service).Status
-                  $retries++
-                  Write-Host "Waiting for Docker service to start... (Attempt $retries/10)"
-              }
-              
-              if ($serviceStatus -eq "Running") {
-                  Write-Host "✅ Docker service started successfully"
-              } else {
-                  Write-Host "⚠️ Docker service failed to start, attempting reinstall..."
-                  
-                  # Uninstall Docker
-                  $uninstallPath = "C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe"
-                  if (Test-Path $uninstallPath) {
-                      Start-Process -FilePath $uninstallPath -ArgumentList "uninstall --force" -Wait
-                      Write-Host "Docker uninstalled"
-                  }
-                  
-                  # Reinstall Docker
-                  Invoke-WebRequest -Uri $dockerUrl -OutFile $installerPath
-                  Start-Process -FilePath $installerPath -ArgumentList "install --quiet --accept-license" -Wait
-                  Remove-Item $installerPath -Force
-                  
-                  # Start service again
-                  Start-Service -Name com.docker.service
-                  Start-Sleep -Seconds 15
-                  
-                  $serviceStatus = (Get-Service -Name com.docker.service).Status
-                  if ($serviceStatus -eq "Running") {
-                      Write-Host "✅ Docker service started after reinstall"
-                  } else {
-                      Write-Host "❌ Docker service still not running"
-                      exit 1
-                  }
-              }
-              
-              # Verify Docker is working
-              $dockerVersion = docker --version
-              if ($dockerVersion) {
-                  Write-Host "✅ Docker is working: $dockerVersion"
-              } else {
-                  Write-Host "❌ Docker command not responding"
-                  exit 1
-              }
-              
-          } catch {
-              Write-Host "❌ Error handling Docker service: $_"
-              exit 1
-          }
-      
-      # === RESTORE STATE ===
       - name: Restore Tailscale state from repository
         shell: pwsh
         run: |
           Write-Host "Current directory: $(Get-Location)"
-          if (Test-Path ".github\\state\\server-state.conf") {
-              Copy-Item ".github\\state\\server-state.conf" -Destination "C:\\ProgramData\\Tailscale\\server-state.conf" -Force
+          if (Test-Path ".github\state\server-state.conf") {
+              Copy-Item ".github\state\server-state.conf" -Destination "C:\ProgramData\Tailscale\server-state.conf" -Force
               Write-Host "✅ Tailscale state restored from repository"
           } else {
               Write-Host "⚠️ No previous state found (this is normal for first run)"
@@ -123,11 +40,11 @@ jobs:
       - name: Configure Core RDP Settings
         run: |
           # Enable Remote Desktop and disable Network Level Authentication (if needed)
-          Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server' `
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
                              -Name "fDenyTSConnections" -Value 0 -Force
-          Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp' `
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
                              -Name "UserAuthentication" -Value 0 -Force
-          Set-ItemProperty -Path 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp' `
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
                              -Name "SecurityLayer" -Value 0 -Force
           # Remove any existing rule with the same name to avoid duplication
           netsh advfirewall firewall delete rule name="RDP-Tailscale"
@@ -169,7 +86,7 @@ jobs:
       - name: Install Tailscale
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
-          $installerPath = "$env:TEMP\\tailscale.msi"
+          $installerPath = "$env:TEMP\tailscale.msi"
           
           Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
           Start-Process msiexec.exe -ArgumentList "/i", "`"$installerPath`"", "/quiet", "/norestart" -Wait
@@ -178,13 +95,13 @@ jobs:
       - name: Establish Tailscale Connection
         run: |
           # Bring up Tailscale with the provided auth key and set a unique hostname
-          & "$env:ProgramFiles\\Tailscale\\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-$env:GITHUB_RUN_ID
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-$env:GITHUB_RUN_ID
           
           # Wait for Tailscale to assign an IP
           $tsIP = $null
           $retries = 0
           while (-not $tsIP -and $retries -lt 10) {
-              $tsIP = & "$env:ProgramFiles\\Tailscale\\tailscale.exe" ip -4
+              $tsIP = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
               Start-Sleep -Seconds 5
               $retries++
           }
@@ -207,6 +124,88 @@ jobs:
           }
           Write-Host "TCP connectivity successful!"
       
+      # === DOCKER INSTALLATION (NOW AFTER TAILSCALE CONNECTION) ===
+      - name: Install Docker Desktop
+        shell: pwsh
+        run: |
+          $dockerUrl = "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe"
+          $installerPath = "$env:TEMP\docker_installer.exe"
+          
+          # Download installer
+          Invoke-WebRequest -Uri $dockerUrl -OutFile $installerPath
+          
+          # Silent install
+          Start-Process -FilePath $installerPath -ArgumentList "install --quiet --accept-license" -Wait
+          
+          # Cleanup
+          Remove-Item $installerPath -Force
+          Write-Host "Docker Desktop installed successfully"
+          
+          # Handle Docker service restart without system reboot
+          try {
+              # Stop Docker service if running
+              Stop-Service -Name com.docker.service -Force -ErrorAction SilentlyContinue
+              
+              # Wait for service to stop
+              Start-Sleep -Seconds 5
+              
+              # Start Docker service
+              Start-Service -Name com.docker.service
+              
+              # Wait for service to start properly
+              $serviceStatus = (Get-Service -Name com.docker.service).Status
+              $retries = 0
+              while ($serviceStatus -ne "Running" -and $retries -lt 10) {
+                  Start-Sleep -Seconds 10
+                  $serviceStatus = (Get-Service -Name com.docker.service).Status
+                  $retries++
+                  Write-Host "Waiting for Docker service to start... (Attempt $retries/10)"
+              }
+              
+              if ($serviceStatus -eq "Running") {
+                  Write-Host "✅ Docker service started successfully"
+              } else {
+                  Write-Host "⚠️ Docker service failed to start, attempting reinstall..."
+                  
+                  # Uninstall Docker
+                  $uninstallPath = "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+                  if (Test-Path $uninstallPath) {
+                      Start-Process -FilePath $uninstallPath -ArgumentList "uninstall --force" -Wait
+                      Write-Host "Docker uninstalled"
+                  }
+                  
+                  # Reinstall Docker
+                  Invoke-WebRequest -Uri $dockerUrl -OutFile $installerPath
+                  Start-Process -FilePath $installerPath -ArgumentList "install --quiet --accept-license" -Wait
+                  Remove-Item $installerPath -Force
+                  
+                  # Start service again
+                  Start-Service -Name com.docker.service
+                  Start-Sleep -Seconds 15
+                  
+                  $serviceStatus = (Get-Service -Name com.docker.service).Status
+                  if ($serviceStatus -eq "Running") {
+                      Write-Host "✅ Docker service started after reinstall"
+                  } else {
+                      Write-Host "❌ Docker service still not running"
+                      exit 1
+                  }
+              }
+              
+              # Verify Docker is working
+              $dockerVersion = docker --version
+              if ($dockerVersion) {
+                  Write-Host "✅ Docker is working: $dockerVersion"
+              } else {
+                  Write-Host "❌ Docker command not responding"
+                  exit 1
+              }
+              
+          } catch {
+              Write-Host "❌ Error handling Docker service: $_"
+              exit 1
+          }
+      
       - name: Maintain Connection
         run: |
           Write-Host "`n=== RDP ACCESS ==="
@@ -227,12 +226,12 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          if (Test-Path "C:\\ProgramData\\Tailscale\\server-state.conf") {
+          if (Test-Path "C:\ProgramData\Tailscale\server-state.conf") {
               # Prepare state directory
-              New-Item -ItemType Directory -Path ".github\\state" -Force | Out-Null
+              New-Item -ItemType Directory -Path ".github\state" -Force | Out-Null
               
               # Copy state file
-              Copy-Item "C:\\ProgramData\\Tailscale\\server-state.conf" -Destination ".github\\state\\server-state.conf" -Force
+              Copy-Item "C:\ProgramData\Tailscale\server-state.conf" -Destination ".github\state\server-state.conf" -Force
               
               Write-Host "✅ State file copied to repository"
           } else {
@@ -251,8 +250,8 @@ jobs:
           git pull --rebase origin main
       
           # Backup old state and copy new one
-          if (Test-Path "C:\\ProgramData\\Tailscale\\server-state.conf") {
-              Copy-Item "C:\\ProgramData\\Tailscale\\server-state.conf" ".github\\state\\server-state.conf" -Force
+          if (Test-Path "C:\ProgramData\Tailscale\server-state.conf") {
+              Copy-Item "C:\ProgramData\Tailscale\server-state.conf" ".github\state\server-state.conf" -Force
               Write-Host "🗂️ Copied new Tailscale state file"
           } else {
               Write-Host "⚠️ No state file found to save"
