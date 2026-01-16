@@ -18,7 +18,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: true
           fetch-depth: 0
-    
+        
       # === PREPARE ===
       - name: Prepare Tailscale directory
         shell: pwsh
@@ -26,7 +26,7 @@ jobs:
           New-Item -ItemType Directory -Path "C:\\ProgramData\\Tailscale" -Force | Out-Null
           Write-Host "Tailscale directory prepared"
           
-      # === INSTALL DOCKER ===
+      # === INSTALL DOCKER (MODIFIED VERSION) ===
       - name: Install Docker Desktop
         shell: pwsh
         run: |
@@ -43,6 +43,71 @@ jobs:
           Remove-Item $installerPath -Force
           Write-Host "Docker Desktop installed successfully"
           
+          # Handle Docker service restart without system reboot
+          try {
+              # Stop Docker service if running
+              Stop-Service -Name com.docker.service -Force -ErrorAction SilentlyContinue
+              
+              # Wait for service to stop
+              Start-Sleep -Seconds 5
+              
+              # Start Docker service
+              Start-Service -Name com.docker.service
+              
+              # Wait for service to start properly
+              $serviceStatus = (Get-Service -Name com.docker.service).Status
+              $retries = 0
+              while ($serviceStatus -ne "Running" -and $retries -lt 10) {
+                  Start-Sleep -Seconds 10
+                  $serviceStatus = (Get-Service -Name com.docker.service).Status
+                  $retries++
+                  Write-Host "Waiting for Docker service to start... (Attempt $retries/10)"
+              }
+              
+              if ($serviceStatus -eq "Running") {
+                  Write-Host "✅ Docker service started successfully"
+              } else {
+                  Write-Host "⚠️ Docker service failed to start, attempting reinstall..."
+                  
+                  # Uninstall Docker
+                  $uninstallPath = "C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe"
+                  if (Test-Path $uninstallPath) {
+                      Start-Process -FilePath $uninstallPath -ArgumentList "uninstall --force" -Wait
+                      Write-Host "Docker uninstalled"
+                  }
+                  
+                  # Reinstall Docker
+                  Invoke-WebRequest -Uri $dockerUrl -OutFile $installerPath
+                  Start-Process -FilePath $installerPath -ArgumentList "install --quiet --accept-license" -Wait
+                  Remove-Item $installerPath -Force
+                  
+                  # Start service again
+                  Start-Service -Name com.docker.service
+                  Start-Sleep -Seconds 15
+                  
+                  $serviceStatus = (Get-Service -Name com.docker.service).Status
+                  if ($serviceStatus -eq "Running") {
+                      Write-Host "✅ Docker service started after reinstall"
+                  } else {
+                      Write-Host "❌ Docker service still not running"
+                      exit 1
+                  }
+              }
+              
+              # Verify Docker is working
+              $dockerVersion = docker --version
+              if ($dockerVersion) {
+                  Write-Host "✅ Docker is working: $dockerVersion"
+              } else {
+                  Write-Host "❌ Docker command not responding"
+                  exit 1
+              }
+              
+          } catch {
+              Write-Host "❌ Error handling Docker service: $_"
+              exit 1
+          }
+      
       # === RESTORE STATE ===
       - name: Restore Tailscale state from repository
         shell: pwsh
@@ -54,7 +119,7 @@ jobs:
           } else {
               Write-Host "⚠️ No previous state found (this is normal for first run)"
           }
-    
+      
       - name: Configure Core RDP Settings
         run: |
           # Enable Remote Desktop and disable Network Level Authentication (if needed)
@@ -184,7 +249,7 @@ jobs:
           git fetch origin main
           git checkout main
           git pull --rebase origin main
-    
+      
           # Backup old state and copy new one
           if (Test-Path "C:\\ProgramData\\Tailscale\\server-state.conf") {
               Copy-Item "C:\\ProgramData\\Tailscale\\server-state.conf" ".github\\state\\server-state.conf" -Force
@@ -192,7 +257,7 @@ jobs:
           } else {
               Write-Host "⚠️ No state file found to save"
           }
-    
+      
           # Commit and push safely
           git add .github/state/server-state.conf
           git commit -m "Save Tailscale state [skip ci]" || echo "No changes to commit"
