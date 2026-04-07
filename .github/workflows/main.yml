@@ -174,7 +174,6 @@ jobs:
 
           if (Test-Path "requirements.txt") {
               pip install -r requirements.txt
-              playwright install chromium
           } else {
               Write-Warning "requirements.txt not found."
           }
