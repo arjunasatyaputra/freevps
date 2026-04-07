@@ -182,6 +182,14 @@ jobs:
         shell: pwsh
         working-directory: C:\Users\runneradmin\webpilot
         run: |
+          Write-Host "Injecting Debug Screenshot into script..."
+          $file = "scripts\yt_studio_monitor.py"
+          $script = Get-Content $file -Raw
+          $target = 'page.goto(STUDIO_URL, wait_until="networkidle")'
+          $replace = "page.goto(STUDIO_URL, wait_until=`"networkidle`")`n    print('📸 Menunggu 15 detik...', file=sys.stderr)`n    page.wait_for_timeout(15000)`n    page.screenshot(path='debug_studio.png', full_page=True)`n    print('✅ Screenshot debug_studio.png disimpan!', file=sys.stderr)"
+          $script = $script.Replace($target, $replace)
+          Set-Content $file $script
+          
           Write-Host "Starting YouTube Studio Monitor in background..."
           # Start the python script in background and redirect output to log files
           Start-Process python -ArgumentList "webpilot.py --session youtube run scripts/yt_studio_monitor.py" -NoNewWindow -RedirectStandardOutput yt_monitor.log -RedirectStandardError yt_monitor_error.log
