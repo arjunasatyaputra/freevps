@@ -134,7 +134,7 @@ jobs:
           Set-Location -Path "C:\ProjectTemp"
       
           # Download file
-          gdown "https://drive.google.com/uc?id=1ruMJ0_yaIpGpHi5TsEbuCSijdUVrvwn9" -O webpilot.zip
+          gdown "https://drive.google.com/uc?id=1_XxkzikAtTgVySCUSl_7DP4RFU376Sfp" -O webpilot.zip
       
           if (!(Test-Path "webpilot.zip")) {
               Write-Error "Download failed! webpilot.zip not found."
@@ -194,7 +194,6 @@ jobs:
 
           Write-Host "Starting YouTube Studio Monitor in background..."
           Start-Process python -ArgumentList @(
-              "-u",
               "webpilot.py",
               "--headless",
               "--session", "youtube",
