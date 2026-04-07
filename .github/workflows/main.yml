@@ -133,10 +133,8 @@ jobs:
           New-Item -ItemType Directory -Path "C:\ProjectTemp" -Force | Out-Null
           Set-Location -Path "C:\ProjectTemp"
       
-          $fileId = "158HUKE1CVDKlZZdrkD3UFvzsQyCp0CQU"
-      
           # FORCE download with proper handling
-          gdown "https://drive.google.com/uc?id=$fileId&confirm=t" -O webpilot.zip --fuzzy
+          gdown --id 158HUKE1CVDKlZZdrkD3UFvzsQyCp0CQU -O webpilot.zip
       
           if (!(Test-Path "webpilot.zip")) {
               Write-Error "Download failed! webpilot.zip not found."
