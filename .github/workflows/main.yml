@@ -134,21 +134,20 @@ jobs:
           Set-Location -Path "C:\ProjectTemp"
       
           $fileId = "158HUKE1CVDKlZZdrkD3UFvzsQyCp0CQU"
-          $url = "https://drive.google.com/uc?id=$fileId"
       
-          gdown $url -O webpilot.zip --fuzzy --no-check-certificate
+          # FORCE download with proper handling
+          gdown "https://drive.google.com/uc?id=$fileId&confirm=t" -O webpilot.zip --fuzzy
       
           if (!(Test-Path "webpilot.zip")) {
               Write-Error "Download failed! webpilot.zip not found."
               exit 1
           }
       
-          # VALIDASI SIZE (penting!)
           $size = (Get-Item webpilot.zip).Length
           Write-Host "Downloaded size: $size bytes"
       
           if ($size -lt 1000000) {
-              Write-Error "Downloaded file too small, likely failed (not real ZIP)."
+              Write-Error "Downloaded file too small, still not valid ZIP."
               exit 1
           }
 
