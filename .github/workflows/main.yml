@@ -128,24 +128,40 @@ jobs:
         shell: pwsh
         run: |
           pip install gdown
-      
+
           Write-Host "Downloading WebPilot ZIP..."
+          
           New-Item -ItemType Directory -Path "C:\ProjectTemp" -Force | Out-Null
           Set-Location -Path "C:\ProjectTemp"
-      
-          # FORCE download with proper handling
-          gdown --id 158HUKE1CVDKlZZdrkD3UFvzsQyCp0CQU -O webpilot.zip
-      
-          if (!(Test-Path "webpilot.zip")) {
-              Write-Error "Download failed! webpilot.zip not found."
-              exit 1
+          
+          $url = "https://drive.google.com/uc?id=158HUKE1CVDKlZZdrkD3UFvzsQyCp0CQU"
+          
+          for ($i=0; $i -lt 3; $i++) {
+          
+              gdown $url -O webpilot.zip --fuzzy --no-cookies --no-check-certificate
+          
+              if (Test-Path "webpilot.zip") {
+          
+                  $size = (Get-Item webpilot.zip).Length
+                  Write-Host "Downloaded size: $size bytes"
+          
+                  if ($size -gt 1000000) {
+          
+                      $bytes = Get-Content webpilot.zip -Encoding Byte -TotalCount 2
+          
+                      if ($bytes[0] -eq 0x50 -and $bytes[1] -eq 0x4B) {
+                          Write-Host "Valid ZIP downloaded!"
+                          break
+                      }
+                  }
+              }
+          
+              Write-Host "Retrying download..."
+              Start-Sleep -Seconds 5
           }
-      
-          $size = (Get-Item webpilot.zip).Length
-          Write-Host "Downloaded size: $size bytes"
-      
-          if ($size -lt 1000000) {
-              Write-Error "Downloaded file too small, still not valid ZIP."
+          
+          if (!(Test-Path "webpilot.zip") -or ((Get-Item webpilot.zip).Length -lt 1000000)) {
+              Write-Error "Download failed after retries"
               exit 1
           }
 
