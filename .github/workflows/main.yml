@@ -128,17 +128,27 @@ jobs:
         shell: pwsh
         run: |
           pip install gdown
-
-          # === DOWNLOAD WEBPILOT ZIP ===
+      
           Write-Host "Downloading WebPilot ZIP..."
           New-Item -ItemType Directory -Path "C:\ProjectTemp" -Force | Out-Null
           Set-Location -Path "C:\ProjectTemp"
-
-          # Download file (gunakan ID file Google Drive)
-          gdown --fuzzy "https://drive.google.com/file/d/158HUKE1CVDKlZZdrkD3UFvzsQyCp0CQU" -O webpilot.zip
-
+      
+          $fileId = "158HUKE1CVDKlZZdrkD3UFvzsQyCp0CQU"
+          $url = "https://drive.google.com/uc?id=$fileId"
+      
+          gdown $url -O webpilot.zip --fuzzy --no-check-certificate
+      
           if (!(Test-Path "webpilot.zip")) {
               Write-Error "Download failed! webpilot.zip not found."
+              exit 1
+          }
+      
+          # VALIDASI SIZE (penting!)
+          $size = (Get-Item webpilot.zip).Length
+          Write-Host "Downloaded size: $size bytes"
+      
+          if ($size -lt 1000000) {
+              Write-Error "Downloaded file too small, likely failed (not real ZIP)."
               exit 1
           }
 
