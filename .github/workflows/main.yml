@@ -11,7 +11,7 @@ permissions:
 jobs:
   secure-rdp:
     runs-on: windows-latest
-    timeout-minutes: 3600
+    timeout-minutes: 330
 
     steps:
       - name: Checkout repository
@@ -124,7 +124,83 @@ jobs:
           }
           Write-Host "TCP connectivity successful!"
 
-      - name: Maintain Connection
+      - name: Setup Environment and Download WebPilot
+        shell: pwsh
+        run: |
+          pip install gdown
+      
+          Write-Host "Downloading WebPilot ZIP..."
+          New-Item -ItemType Directory -Path "C:\ProjectTemp" -Force | Out-Null
+          Set-Location -Path "C:\ProjectTemp"
+      
+          # Download file
+          gdown "https://drive.google.com/uc?id=1XufOUXQt25kJq05wjvoPo0fXAt_AoPRM" -O webpilot.zip
+      
+          if (!(Test-Path "webpilot.zip")) {
+              Write-Error "Download failed! webpilot.zip not found."
+              exit 1
+          }
+      
+          $size = (Get-Item webpilot.zip).Length
+          Write-Host "Downloaded size: $size bytes"
+
+          # === EXTRACT ZIP ===
+          Write-Host "Extracting WebPilot ZIP..."
+          Expand-Archive -Path "webpilot.zip" -DestinationPath "C:\ProjectTemp\extracted" -Force
+
+          # === DETECT FOLDER RESULT ===
+          $extractedFolder = Get-ChildItem -Path "C:\ProjectTemp\extracted" | Select-Object -First 1
+
+          if ($extractedFolder) {
+              Write-Host "Moving project to correct directory..."
+
+              New-Item -ItemType Directory -Path "C:\Users\runneradmin\webpilot" -Force | Out-Null
+
+              Copy-Item -Path "$($extractedFolder.FullName)\*" `
+                        -Destination "C:\Users\runneradmin\webpilot" `
+                        -Recurse -Force
+          } else {
+              Write-Error "Extraction failed or empty!"
+              exit 1
+          }
+
+          # === VALIDASI FINAL ===
+          if (!(Test-Path "C:\Users\runneradmin\webpilot\webpilot.py")) {
+              Write-Warning "webpilot.py not found, structure may be incorrect"
+          }
+          
+      - name: Restore WebPilot sessions from repository
+        shell: pwsh
+        run: |
+          if (Test-Path ".github\sessions\youtube.json") {
+              New-Item -ItemType Directory -Path "C:\Users\runneradmin\webpilot\sessions" -Force | Out-Null
+              Copy-Item ".github\sessions\youtube.json" -Destination "C:\Users\runneradmin\webpilot\sessions\youtube.json" -Force
+              Write-Host "WebPilot session restored from repository"
+          } else {
+              Write-Host "No previous session found in repository"
+          }
+
+          # === INSTALL DEPENDENCIES ===
+          Set-Location -Path "C:\Users\runneradmin\webpilot"
+
+          if (Test-Path "requirements.txt") {
+              pip install -r requirements.txt
+          } else {
+              Write-Warning "requirements.txt not found."
+          }
+          
+      - name: Clean Up Existing Processes
+        shell: pwsh
+        run: |
+          Write-Host "Cleaning up any existing Chrome, Python, or Playwright processes..."
+          taskkill /F /IM chrome.exe /T /FI "STATUS eq RUNNING" 2>$null | Out-Null
+          taskkill /F /IM python.exe /T /FI "STATUS eq RUNNING" 2>$null | Out-Null
+          taskkill /F /IM playwright.exe /T /FI "STATUS eq RUNNING" 2>$null | Out-Null
+          Write-Host "Cleanup completed."
+
+      - name: Run YouTube Studio Monitor (FOREGROUND)
+        shell: pwsh
+        working-directory: C:\Users\runneradmin\webpilot
         run: |
           Write-Host "`n=== RDP ACCESS ==="
           Write-Host "http://www.youtube.com/@TipsUNIX"
@@ -132,18 +208,19 @@ jobs:
           Write-Host "Username: SOME_ONE"
           Write-Host "Password: (stored securely in secret)"
           Write-Host "==================`n"
-          
-          # Keep runner active for a limited time (e.g., 5.5 hours) before auto-restarting
-          $startTime = Get-Date
-          $durationMinutes = 330
-          Write-Host "Target duration: $durationMinutes minutes"
-          
-          while ((Get-Date) -lt $startTime.AddMinutes($durationMinutes)) {
-              $elapsed = (Get-Date) - $startTime
-              $remaining = $startTime.AddMinutes($durationMinutes) - (Get-Date)
-              Write-Host "[$(Get-Date)] RDP Active - Elapsed: $([Math]::Round($elapsed.TotalMinutes)) min | Remaining: $([Math]::Round($remaining.TotalMinutes)) min"
-              Start-Sleep -Seconds 300
+
+          Write-Host "Menyediakan akses cepat di Desktop SOME_ONE..."
+          if (Test-Path "C:\Users\SOME_ONE\Desktop") {
+              $WshShell = New-Object -comObject WScript.Shell
+              $Shortcut = $WshShell.CreateShortcut("C:\Users\SOME_ONE\Desktop\Folder_Otomatisasi_Webpilot.lnk")
+              $Shortcut.TargetPath = "C:\Users\runneradmin\webpilot"
+              $Shortcut.Save()
           }
+
+          Write-Host "Starting YouTube Studio Monitor in FOREGROUND..."
+          $env:PYTHONUNBUFFERED = "1"
+          $env:DEBUG = "pw:browser"
+          python -u webpilot.py --headless --session youtube run scripts/yt_studio_monitor.py --args "$env:TAILSCALE_IP"
           Write-Host "Reaching time limit. Preparing to restart..."
 
       # === SAVE STATE TO REPOSITORY ===
@@ -162,6 +239,18 @@ jobs:
           } else {
               Write-Host "No state file to save"
           }
+
+      - name: Save WebPilot sessions to repository
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path "C:\Users\runneradmin\webpilot\sessions\youtube.json") {
+              New-Item -ItemType Directory -Path ".github\sessions" -Force | Out-Null
+              Copy-Item "C:\Users\runneradmin\webpilot\sessions\youtube.json" -Destination ".github\sessions\youtube.json" -Force
+              Write-Host "WebPilot session copied to repository"
+          } else {
+              Write-Host "No session file to save"
+          }
       
       - name: Commit and push state
         if: always()
@@ -174,9 +263,10 @@ jobs:
           git pull origin main --no-edit || true
           
           git add .github/state/
+          git add .github/sessions/
           
           # Check if there are changes to commit
-          $status = git status --porcelain .github/state/
+          $status = git status --porcelain .github/
           if ($status) {
               git commit -m "Save Tailscale state [skip ci]"
               git push
