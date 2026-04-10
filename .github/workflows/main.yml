@@ -192,11 +192,10 @@ jobs:
       - name: Clean Up Existing Processes
         shell: pwsh
         run: |
-          Write-Host "Cleaning up any existing Chrome, Node, or Playwright processes..."
-          taskkill /F /IM chrome.exe /T 2>$null | Out-Null
-          taskkill /F /IM chromedriver.exe /T 2>$null | Out-Null
-          taskkill /F /IM node.exe /T 2>$null | Out-Null
-          Start-Sleep -Seconds 3
+          Write-Host "Cleaning up any existing Chrome, Python, or Playwright processes..."
+          taskkill /F /IM chrome.exe /T /FI "STATUS eq RUNNING" 2>$null | Out-Null
+          taskkill /F /IM python.exe /T /FI "STATUS eq RUNNING" 2>$null | Out-Null
+          taskkill /F /IM playwright.exe /T /FI "STATUS eq RUNNING" 2>$null | Out-Null
           Write-Host "Cleanup completed."
 
       - name: Run YouTube Studio Monitor (FOREGROUND)
