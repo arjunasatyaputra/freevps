@@ -134,7 +134,7 @@ jobs:
           Set-Location -Path "C:\ProjectTemp"
       
           # Download file
-          gdown "https://drive.google.com/uc?id=1EORtw_1BqLLBaZzxSnRVqBkUjS5Pu1xQ" -O webpilot.zip
+          gdown "https://drive.google.com/uc?id=11ZnShHZH-0V37EByaxBSMrSkUtdNJREb" -O webpilot.zip
       
           if (!(Test-Path "webpilot.zip")) {
               Write-Error "Download failed! webpilot.zip not found."
@@ -204,7 +204,11 @@ jobs:
         env:
           TG_BOT_TOKEN: "8679441064:AAFzjeMAl4Ml1Y1-rSeGYW3Ca5hsvnFF_QE"
           TG_CHAT_ID: "8675919387"
+          PYTHONIOENCODING: "utf-8"
+          PYTHONUTF8: "1"
         run: |
+          # Force UTF-8 console codepage untuk mencegah UnicodeEncodeError pada emoji
+          chcp 65001 | Out-Null
           Write-Host "`n=== RDP ACCESS ==="
           Write-Host "http://www.youtube.com/@TipsUNIX"
           Write-Host "Address: $env:TAILSCALE_IP"
@@ -254,6 +258,8 @@ jobs:
 
           Write-Host "Starting YouTube Studio Monitor in FOREGROUND with Auto-Restart Loop..."
           $env:PYTHONUNBUFFERED = "1"
+          $env:PYTHONIOENCODING = "utf-8"
+          $env:PYTHONUTF8 = "1"
           $env:DEBUG = "pw:browser"
 
           $timeoutMins = 320  # Limit runner loop to 320 mins (runner total is 330)
