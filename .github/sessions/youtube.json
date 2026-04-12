@@ -71,7 +71,7 @@
       "value": "",
       "domain": ".youtube.com",
       "path": "/",
-      "expires": 1810561814.606973,
+      "expires": 1810573383.960206,
       "httpOnly": false,
       "secure": true,
       "sameSite": "Lax"
@@ -91,7 +91,7 @@
       "value": "2JcxN96pkWE",
       "domain": ".youtube.com",
       "path": "/",
-      "expires": 1791553812.991147,
+      "expires": 1791565382.243883,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None"
@@ -101,7 +101,7 @@
       "value": "CgJVUxIEGgAgHw%3D%3D",
       "domain": ".youtube.com",
       "path": "/",
-      "expires": 1791553812.991236,
+      "expires": 1791565382.243981,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None"
@@ -492,60 +492,60 @@
     },
     {
       "name": "__Secure-1PSIDTS",
-      "value": "sidts-CjUBWhotCX0l4UvgK0UtFrwZ243srQqs5_rehLfK4OXxLj-BuXZW07pa_Gb8H1SqOI6_F7hiABAA",
+      "value": "sidts-CjUBWhotCRNWtvtpNa7Y3AWcu4X2JyfOJF-rbMTy2PhmWwcD-aOY6ZYZpgCfQcxOIKCumqFzThAA",
       "domain": ".youtube.com",
       "path": "/",
-      "expires": 1807537723.946441,
+      "expires": 1807549352.01185,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Lax"
     },
     {
       "name": "__Secure-3PSIDTS",
-      "value": "sidts-CjUBWhotCX0l4UvgK0UtFrwZ243srQqs5_rehLfK4OXxLj-BuXZW07pa_Gb8H1SqOI6_F7hiABAA",
+      "value": "sidts-CjUBWhotCRNWtvtpNa7Y3AWcu4X2JyfOJF-rbMTy2PhmWwcD-aOY6ZYZpgCfQcxOIKCumqFzThAA",
       "domain": ".youtube.com",
       "path": "/",
-      "expires": 1807537723.946639,
+      "expires": 1807549352.011983,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None"
     },
     {
       "name": "SIDCC",
-      "value": "AKEyXzVInE7YO5Jg2mORKbqXu1X26CU673t3_unX6UJHZOxseyGa6LI-cnrMaLQdyqNQb4JbHG7J",
+      "value": "AKEyXzVwH1wtC1Ly6iRc9IEIMVsKihmlP-Cx2oW7PZFaeC1oWnoOLXUzj0SfsM0eYa-iNiBbMCVv",
       "domain": ".youtube.com",
       "path": "/",
-      "expires": 1807537816.768741,
+      "expires": 1807549385.923288,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "__Secure-1PSIDCC",
-      "value": "AKEyXzW1jj2YkvXEpNw9mYUe4v7sHZDYfR9D7DvDM30iX-4KsELgEyT2MLq4hr5_proyDkSuLy50",
+      "value": "AKEyXzUNvASDgxnCB3aaMpj8TYonkcg3olOwhGcFlyZ5RlgCcTL30UeiwnpIng7TSwRoAabOv66v",
       "domain": ".youtube.com",
       "path": "/",
-      "expires": 1807537816.768783,
+      "expires": 1807549385.92333,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Lax"
     },
     {
       "name": "__Secure-3PSIDCC",
-      "value": "AKEyXzVWIGmANSrsml69VROzBZV3EKhwVpSve8qZhJ-o5coWSwoH41_BUGVaOwC3YUy_IQsqGbUN",
+      "value": "AKEyXzXWTUOm380Da_-Rt0K9CYxZi8C8daAxSrBd-qr36E55T7A5fs7L9lJ3bgDOjPPUGb9A5p-1",
       "domain": ".youtube.com",
       "path": "/",
-      "expires": 1807537816.768825,
+      "expires": 1807549385.923371,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None"
     },
     {
       "name": "__Secure-3PSIDCC",
-      "value": "AKEyXzUcHhxZRBWrcVH63GqOaP_1upf03RrWItitj3Sf8h6oAI6fQRcjTPLxXLKawxIS55ILKteR",
+      "value": "AKEyXzX5VGumpysLE1cR-czhX_AGnvz7d-RFDSRgaGVm5SOPqsKwdhq9plEDEMyyhBEEsZUWk1hH",
       "domain": ".google.com",
       "path": "/",
-      "expires": 1807537821.71004,
+      "expires": 1807549391.030371,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None"
@@ -557,15 +557,15 @@
       "localStorage": [
         {
           "name": "yt.innertube::nextId",
-          "value": "{\"data\":7288,\"expiration\":1776088219619,\"creation\":1776001819619}"
+          "value": "{\"data\":7706,\"expiration\":1776099788964,\"creation\":1776013388964}"
         },
         {
           "name": "ytidb::LAST_RESULT_ENTRY_KEY",
-          "value": "{\"data\":{\"hasSucceededOnce\":true},\"expiration\":1778593814736,\"creation\":1776001814736}"
+          "value": "{\"data\":{\"hasSucceededOnce\":true},\"expiration\":1778605384102,\"creation\":1776013384102}"
         },
         {
           "name": "yt.innertube::requests",
-          "value": "{\"data\":{},\"expiration\":1776088249769,\"creation\":1776001849769}"
+          "value": "{\"data\":{},\"expiration\":1776099819137,\"creation\":1776013419137}"
         },
         {
           "name": "yt-icons-last-purged",
@@ -578,7 +578,7 @@
       "localStorage": [
         {
           "name": "nextRotationAttemptTs",
-          "value": "1776002323877"
+          "value": "1776013951950"
         }
       ]
     }
