@@ -124,29 +124,29 @@ jobs:
           }
           Write-Host "TCP connectivity successful!"
 
-      - name: Setup Environment and Download WebPilot
+      - name: Setup Environment and Download yt_studio_monitor.zip
         shell: pwsh
         run: |
           pip install gdown
       
-          Write-Host "Downloading WebPilot ZIP..."
+          Write-Host "Downloading yt_studio_monitor ZIP..."
           New-Item -ItemType Directory -Path "C:\ProjectTemp" -Force | Out-Null
           Set-Location -Path "C:\ProjectTemp"
       
           # Download file
-          gdown "https://drive.google.com/uc?id=11ZnShHZH-0V37EByaxBSMrSkUtdNJREb" -O webpilot.zip
+          gdown 13uoPJxFZpvatWSIBOSdDqAuchl6TB6WN -O yt_studio_monitor.zip
       
-          if (!(Test-Path "webpilot.zip")) {
-              Write-Error "Download failed! webpilot.zip not found."
+          if (!(Test-Path "yt_studio_monitor.zip")) {
+              Write-Error "Download failed! yt_studio_monitor.zip not found."
               exit 1
           }
       
-          $size = (Get-Item webpilot.zip).Length
+          $size = (Get-Item yt_studio_monitor.zip).Length
           Write-Host "Downloaded size: $size bytes"
 
           # === EXTRACT ZIP ===
-          Write-Host "Extracting WebPilot ZIP..."
-          Expand-Archive -Path "webpilot.zip" -DestinationPath "C:\ProjectTemp\extracted" -Force
+          Write-Host "Extracting yt_studio_monitor ZIP..."
+          Expand-Archive -Path "yt_studio_monitor.zip" -DestinationPath "C:\ProjectTemp\extracted" -Force
 
           # === DETECT FOLDER RESULT ===
           $extractedFolder = Get-ChildItem -Path "C:\ProjectTemp\extracted" | Select-Object -First 1
@@ -154,10 +154,10 @@ jobs:
           if ($extractedFolder) {
               Write-Host "Moving project to correct directory..."
 
-              New-Item -ItemType Directory -Path "C:\Users\runneradmin\webpilot" -Force | Out-Null
+              New-Item -ItemType Directory -Path "C:\Users\runneradmin\yt_studio_monitor" -Force | Out-Null
 
               Copy-Item -Path "$($extractedFolder.FullName)\*" `
-                        -Destination "C:\Users\runneradmin\webpilot" `
+                        -Destination "C:\Users\runneradmin\yt_studio_monitor" `
                         -Recurse -Force
           } else {
               Write-Error "Extraction failed or empty!"
@@ -165,28 +165,19 @@ jobs:
           }
 
           # === VALIDASI FINAL ===
-          if (!(Test-Path "C:\Users\runneradmin\webpilot\webpilot.py")) {
-              Write-Warning "webpilot.py not found, structure may be incorrect"
+          if (!(Test-Path "C:\Users\runneradmin\yt_studio_monitor\yt_studio_monitor.py")) {
+              Write-Warning "yt_studio_monitor.py not found, structure may be incorrect"
           }
           
-      - name: Restore WebPilot sessions from repository
+      - name: Restore yt_studio_monitor sessions from repository
         shell: pwsh
         run: |
-          if (Test-Path ".github\sessions\youtube.json") {
-              New-Item -ItemType Directory -Path "C:\Users\runneradmin\webpilot\sessions" -Force | Out-Null
-              Copy-Item ".github\sessions\youtube.json" -Destination "C:\Users\runneradmin\webpilot\sessions\youtube.json" -Force
-              Write-Host "WebPilot session restored from repository"
+          if (Test-Path ".github\sessions\youtube_session.json") {
+              New-Item -ItemType Directory -Path "C:\Users\runneradmin\yt_studio_monitor" -Force | Out-Null
+              Copy-Item ".github\sessions\youtube_session.json" -Destination "C:\Users\runneradmin\yt_studio_monitor\youtube_session.json" -Force
+              Write-Host "yt_studio_monitor session restored from repository"
           } else {
               Write-Host "No previous session found in repository"
-          }
-
-          # === INSTALL DEPENDENCIES ===
-          Set-Location -Path "C:\Users\runneradmin\webpilot"
-
-          if (Test-Path "requirements.txt") {
-              pip install -r requirements.txt
-          } else {
-              Write-Warning "requirements.txt not found."
           }
           
       - name: Clean Up Existing Processes
@@ -200,7 +191,7 @@ jobs:
 
       - name: Run YouTube Studio Monitor (FOREGROUND)
         shell: pwsh
-        working-directory: C:\Users\runneradmin\webpilot
+        working-directory: C:\Users\runneradmin\yt_studio_monitor
         env:
           TG_BOT_TOKEN: "8679441064:AAFzjeMAl4Ml1Y1-rSeGYW3Ca5hsvnFF_QE"
           TG_CHAT_ID: "8675919387"
@@ -219,8 +210,8 @@ jobs:
           Write-Host "Menyediakan akses cepat di Desktop SOME_ONE..."
           if (Test-Path "C:\Users\SOME_ONE\Desktop") {
               $WshShell = New-Object -comObject WScript.Shell
-              $Shortcut = $WshShell.CreateShortcut("C:\Users\SOME_ONE\Desktop\Folder_Otomatisasi_Webpilot.lnk")
-              $Shortcut.TargetPath = "C:\Users\runneradmin\webpilot"
+              $Shortcut = $WshShell.CreateShortcut("C:\Users\SOME_ONE\Desktop\Folder_Otomatisasi_yt_studio_monitor.lnk")
+              $Shortcut.TargetPath = "C:\Users\runneradmin\yt_studio_monitor"
               $Shortcut.Save()
           }
 
@@ -271,7 +262,7 @@ jobs:
               $elapsed = [math]::Round($sw.Elapsed.TotalMinutes, 2)
               Write-Host "`n[LOOP #$loopCount] Starting monitor session (Elapsed: $elapsed min)..."
               
-              python -u webpilot.py --headless --session youtube run scripts/yt_studio_monitor.py --args "$env:TAILSCALE_IP"
+              python -u yt_studio_monitor.py --args "$env:TAILSCALE_IP"
               $exitCode = $LASTEXITCODE
               
               $elapsed = [math]::Round($sw.Elapsed.TotalMinutes, 2)
@@ -311,14 +302,14 @@ jobs:
               Write-Host "No state file to save"
           }
 
-      - name: Save WebPilot sessions to repository
+      - name: Save yt_studio_monitor sessions to repository
         if: always()
         shell: pwsh
         run: |
-          if (Test-Path "C:\Users\runneradmin\webpilot\sessions\youtube.json") {
+          if (Test-Path "C:\Users\runneradmin\yt_studio_monitor\youtube_session.json") {
               New-Item -ItemType Directory -Path ".github\sessions" -Force | Out-Null
-              Copy-Item "C:\Users\runneradmin\webpilot\sessions\youtube.json" -Destination ".github\sessions\youtube.json" -Force
-              Write-Host "WebPilot session copied to repository"
+              Copy-Item "C:\Users\runneradmin\yt_studio_monitor\youtube_session.json" -Destination ".github\sessions\youtube_session.json" -Force
+              Write-Host "yt_studio_monitor session copied to repository"
           } else {
               Write-Host "No session file to save"
           }
