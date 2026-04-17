@@ -262,7 +262,7 @@ jobs:
               $elapsed = [math]::Round($sw.Elapsed.TotalMinutes, 2)
               Write-Host "`n[LOOP #$loopCount] Starting monitor session (Elapsed: $elapsed min)..."
               
-              python -u yt_studio_monitor.py --args "$env:TAILSCALE_IP"
+              python -u yt_studio_monitor.py
               $exitCode = $LASTEXITCODE
               
               $elapsed = [math]::Round($sw.Elapsed.TotalMinutes, 2)
