@@ -127,6 +127,7 @@ jobs:
       - name: Setup Environment and Download yt_studio_monitor.zip
         shell: pwsh
         run: |
+          pip install playwright
           pip install gdown
       
           Write-Host "Downloading yt_studio_monitor ZIP..."
