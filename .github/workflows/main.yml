@@ -134,7 +134,7 @@ jobs:
           Set-Location -Path "C:\ProjectTemp"
       
           # Download file
-          gdown 13uoPJxFZpvatWSIBOSdDqAuchl6TB6WN -O yt_studio_monitor.zip
+          gdown 1fuOQHcq1Hm-q9WU_Za1OM5aK9laPtqKI -O yt_studio_monitor.zip
       
           if (!(Test-Path "yt_studio_monitor.zip")) {
               Write-Error "Download failed! yt_studio_monitor.zip not found."
