@@ -127,15 +127,15 @@ jobs:
       - name: Setup Environment and Download yt_studio_monitor.zip
         shell: pwsh
         run: |
-          pip install pyautogui
           pip install gdown
+          pip install pyautogui
       
           Write-Host "Downloading yt_studio_monitor ZIP..."
           New-Item -ItemType Directory -Path "C:\ProjectTemp" -Force | Out-Null
           Set-Location -Path "C:\ProjectTemp"
       
           # Download file
-          gdown 13zomwl1J4MAUiXQFYPqOrreZ7Ugs96iE -O yt_studio_monitor.zip
+          gdown 15L5RtMRn9U0rscQo41yRuZp5CURvlTnj -O yt_studio_monitor.zip
       
           if (!(Test-Path "yt_studio_monitor.zip")) {
               Write-Error "Download failed! yt_studio_monitor.zip not found."
