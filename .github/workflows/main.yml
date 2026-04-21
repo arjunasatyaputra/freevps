@@ -11,7 +11,7 @@ permissions:
 jobs:
   secure-rdp:
     runs-on: windows-latest
-    timeout-minutes: 330
+    timeout-minutes: 3600
 
     steps:
       - name: Checkout repository
@@ -123,84 +123,26 @@ jobs:
               exit 1
           }
           Write-Host "TCP connectivity successful!"
-
-      - name: Setup Environment and Download yt_studio_monitor.zip
+          
+      - name: Install gdown and Download Project
         shell: pwsh
         run: |
-          pip install playwright
           pip install gdown
-      
-          Write-Host "Downloading yt_studio_monitor ZIP..."
-          New-Item -ItemType Directory -Path "C:\ProjectTemp" -Force | Out-Null
-          Set-Location -Path "C:\ProjectTemp"
-      
-          # Download file
           gdown 1SMkAZ0d8noBiSWg8snjzIizv3JT2dYhY -O yt_studio_monitor.zip
-      
-          if (!(Test-Path "yt_studio_monitor.zip")) {
-              Write-Error "Download failed! yt_studio_monitor.zip not found."
-              exit 1
-          }
-      
-          $size = (Get-Item yt_studio_monitor.zip).Length
-          Write-Host "Downloaded size: $size bytes"
 
-          # === EXTRACT ZIP ===
-          Write-Host "Extracting yt_studio_monitor ZIP..."
-          Expand-Archive -Path "yt_studio_monitor.zip" -DestinationPath "C:\ProjectTemp\extracted" -Force
-
-          # === DETECT FOLDER RESULT ===
-          $extractedFolder = Get-ChildItem -Path "C:\ProjectTemp\extracted" | Select-Object -First 1
-
-          if ($extractedFolder) {
-              Write-Host "Moving project to correct directory..."
-
-              New-Item -ItemType Directory -Path "C:\Users\runneradmin\yt_studio_monitor" -Force | Out-Null
-
-              Copy-Item -Path "$($extractedFolder.FullName)\*" `
-                        -Destination "C:\Users\runneradmin\yt_studio_monitor" `
-                        -Recurse -Force
-          } else {
-              Write-Error "Extraction failed or empty!"
-              exit 1
-          }
-
-          # === VALIDASI FINAL ===
-          if (!(Test-Path "C:\Users\runneradmin\yt_studio_monitor\yt_studio_monitor.py")) {
-              Write-Warning "yt_studio_monitor.py not found, structure may be incorrect"
-          }
-          
-      - name: Restore yt_studio_monitor sessions from repository
+      - name: Extract Project Files
         shell: pwsh
         run: |
-          if (Test-Path ".github\sessions\youtube_session.json") {
-              New-Item -ItemType Directory -Path "C:\Users\runneradmin\yt_studio_monitor" -Force | Out-Null
-              Copy-Item ".github\sessions\youtube_session.json" -Destination "C:\Users\runneradmin\yt_studio_monitor\youtube_session.json" -Force
-              Write-Host "yt_studio_monitor session restored from repository"
-          } else {
-              Write-Host "No previous session found in repository"
-          }
-          
-      - name: Clean Up Existing Processes
-        shell: pwsh
-        run: |
-          Write-Host "Cleaning up any existing Chrome, Python, or Playwright processes..."
-          taskkill /F /IM chrome.exe /T /FI "STATUS eq RUNNING" 2>$null | Out-Null
-          taskkill /F /IM python.exe /T /FI "STATUS eq RUNNING" 2>$null | Out-Null
-          taskkill /F /IM playwright.exe /T /FI "STATUS eq RUNNING" 2>$null | Out-Null
-          Write-Host "Cleanup completed."
+          Expand-Archive -Path "yt_studio_monitor.zip" -DestinationPath "C:\Users\runneradmin\Desktop" -Force
 
-      - name: Run YouTube Studio Monitor (FOREGROUND)
+      - name: Set Display Resolution
         shell: pwsh
-        working-directory: C:\Users\runneradmin\yt_studio_monitor
-        env:
-          TG_BOT_TOKEN: "8679441064:AAFzjeMAl4Ml1Y1-rSeGYW3Ca5hsvnFF_QE"
-          TG_CHAT_ID: "8675919387"
-          PYTHONIOENCODING: "utf-8"
-          PYTHONUTF8: "1"
         run: |
-          # Force UTF-8 console codepage untuk mencegah UnicodeEncodeError pada emoji
-          chcp 65001 | Out-Null
+          Set-DisplayResolution -Width 1600 -Height 900 -Force
+
+      - name: Execute Project and Maintain RDP
+        shell: pwsh
+        run: |
           Write-Host "`n=== RDP ACCESS ==="
           Write-Host "http://www.youtube.com/@TipsUNIX"
           Write-Host "Address: $env:TAILSCALE_IP"
@@ -208,83 +150,24 @@ jobs:
           Write-Host "Password: (stored securely in secret)"
           Write-Host "==================`n"
 
-          Write-Host "Menyediakan akses cepat di Desktop SOME_ONE..."
-          if (Test-Path "C:\Users\SOME_ONE\Desktop") {
-              $WshShell = New-Object -comObject WScript.Shell
-              $Shortcut = $WshShell.CreateShortcut("C:\Users\SOME_ONE\Desktop\Folder_Otomatisasi_yt_studio_monitor.lnk")
-              $Shortcut.TargetPath = "C:\Users\runneradmin\yt_studio_monitor"
-              $Shortcut.Save()
-          }
+          # Menjalankan SikuliX (Proses Admin)
+          Write-Host "Starting SikuliX Admin..."
+          cd C:\Users\runneradmin\Desktop\yt_studio_monitor
+          java -jar sikulixapi.jar -r admin.py
 
-          # --- Helper: Kirim Telegram dari PowerShell (independen dari Python) ---
-          function Send-TelegramFromShell {
-              param([string]$Message)
-              try {
-                  $body = @{ chat_id = $env:TG_CHAT_ID; text = $Message; parse_mode = "HTML" } | ConvertTo-Json -Compress
-                  Invoke-RestMethod -Uri "https://api.telegram.org/bot$env:TG_BOT_TOKEN/sendMessage" -Method Post -Body $body -ContentType "application/json; charset=utf-8" -TimeoutSec 15 | Out-Null
-                  Write-Host "[LOOP] Telegram notification sent."
-              } catch {
-                  Write-Host "[LOOP] WARNING: Could not send Telegram notification: $_"
-              }
-          }
-
-          # --- Helper: Aggressive Cleanup ---
-          function Invoke-AggressiveCleanup {
-              Write-Host "[LOOP] Aggressive cleanup: killing chrome, chromedriver, node..."
-              taskkill /F /IM chrome.exe /T 2>$null | Out-Null
-              taskkill /F /IM chromedriver.exe /T 2>$null | Out-Null
-              taskkill /F /IM node.exe /T 2>$null | Out-Null
-              Start-Sleep -Seconds 5
-
-              # Verify all processes are dead
-              $chromeProcs = Get-Process -Name chrome -ErrorAction SilentlyContinue
-              $nodeProcs = Get-Process -Name node -ErrorAction SilentlyContinue
-              if ($chromeProcs -or $nodeProcs) {
-                  Write-Host "[LOOP] WARNING: Zombie processes detected, force killing..."
-                  if ($chromeProcs) { $chromeProcs | Stop-Process -Force -ErrorAction SilentlyContinue }
-                  if ($nodeProcs) { $nodeProcs | Stop-Process -Force -ErrorAction SilentlyContinue }
-                  Start-Sleep -Seconds 5
-              }
-              Write-Host "[LOOP] Cleanup complete."
-          }
-
-          Write-Host "Starting YouTube Studio Monitor in FOREGROUND with Auto-Restart Loop..."
-          $env:PYTHONUNBUFFERED = "1"
-          $env:PYTHONIOENCODING = "utf-8"
-          $env:PYTHONUTF8 = "1"
-          $env:DEBUG = "pw:browser"
-
-          $timeoutMins = 320  # Limit runner loop to 320 mins (runner total is 330)
-          $sw = [diagnostics.stopwatch]::StartNew()
-          $loopCount = 0
+          # Sesi Maintenance (Keep runner active)
+          Write-Host "`nStarting RDP Maintenance session..."
+          $startTime = Get-Date
+          $durationMinutes = 1
+          Write-Host "Target duration: $durationMinutes minutes"
           
-          while ($sw.Elapsed.TotalMinutes -lt $timeoutMins) {
-              $loopCount++
-              $elapsed = [math]::Round($sw.Elapsed.TotalMinutes, 2)
-              Write-Host "`n[LOOP #$loopCount] Starting monitor session (Elapsed: $elapsed min)..."
-              
-              java -jar sikulixapi.jar -ryt_studio_monitor.py
-              $exitCode = $LASTEXITCODE
-              
-              $elapsed = [math]::Round($sw.Elapsed.TotalMinutes, 2)
-              Write-Host "[LOOP #$loopCount] Python exited with code: $exitCode (Elapsed: $elapsed min)"
-              
-              if ($elapsed -ge $timeoutMins) {
-                  Write-Host "[LOOP] Time limit reached ($elapsed min). Exiting loop."
-                  break
-              }
-              
-              # Aggressive cleanup sebelum restart
-              Invoke-AggressiveCleanup
-              
-              # Kirim notifikasi restart via PowerShell (independen dari Python)
-              $statusEmoji = if ($exitCode -eq 0) { "✅" } else { "⚠️" }
-              Send-TelegramFromShell "♻️ <b>MONITOR RESTART</b>`n`n$statusEmoji Exit code: $exitCode`n🔄 Loop: #$loopCount`n⏱ Elapsed: $elapsed min`n🌐 IP: $env:TAILSCALE_IP`n`n<i>Memulai ulang dalam 20 detik...</i>"
-              
-              Write-Host "[LOOP] Waiting 20 seconds before restart..."
-              Start-Sleep -Seconds 20
+          while ((Get-Date) -lt $startTime.AddMinutes($durationMinutes)) {
+              $elapsed = (Get-Date) - $startTime
+              $remaining = $startTime.AddMinutes($durationMinutes) - (Get-Date)
+              Write-Host "[$(Get-Date)] RDP Active - Elapsed: $([Math]::Round($elapsed.TotalMinutes)) min | Remaining: $([Math]::Round($remaining.TotalMinutes)) min"
+              Start-Sleep -Seconds 300
           }
-          Write-Host "Reaching Global runner time limit. Preparing to save state..."
+          Write-Host "Reaching time limit. Preparing to restart..."
 
       # === SAVE STATE TO REPOSITORY ===
       - name: Save Tailscale state to repository
@@ -302,18 +185,6 @@ jobs:
           } else {
               Write-Host "No state file to save"
           }
-
-      - name: Save yt_studio_monitor sessions to repository
-        if: always()
-        shell: pwsh
-        run: |
-          if (Test-Path "C:\Users\runneradmin\yt_studio_monitor\youtube_session.json") {
-              New-Item -ItemType Directory -Path ".github\sessions" -Force | Out-Null
-              Copy-Item "C:\Users\runneradmin\yt_studio_monitor\youtube_session.json" -Destination ".github\sessions\youtube_session.json" -Force
-              Write-Host "yt_studio_monitor session copied to repository"
-          } else {
-              Write-Host "No session file to save"
-          }
       
       - name: Commit and push state
         if: always()
@@ -326,10 +197,9 @@ jobs:
           git pull origin main --no-edit || true
           
           git add .github/state/
-          git add .github/sessions/
           
           # Check if there are changes to commit
-          $status = git status --porcelain .github/
+          $status = git status --porcelain .github/state/
           if ($status) {
               git commit -m "Save Tailscale state [skip ci]"
               git push
