@@ -127,15 +127,15 @@ jobs:
       - name: Setup Environment and Download yt_studio_monitor.zip
         shell: pwsh
         run: |
+          pip install playwright
           pip install gdown
-          pip install pyautogui
       
           Write-Host "Downloading yt_studio_monitor ZIP..."
           New-Item -ItemType Directory -Path "C:\ProjectTemp" -Force | Out-Null
           Set-Location -Path "C:\ProjectTemp"
       
           # Download file
-          gdown 15L5RtMRn9U0rscQo41yRuZp5CURvlTnj -O yt_studio_monitor.zip
+          gdown 1SMkAZ0d8noBiSWg8snjzIizv3JT2dYhY -O yt_studio_monitor.zip
       
           if (!(Test-Path "yt_studio_monitor.zip")) {
               Write-Error "Download failed! yt_studio_monitor.zip not found."
@@ -263,7 +263,7 @@ jobs:
               $elapsed = [math]::Round($sw.Elapsed.TotalMinutes, 2)
               Write-Host "`n[LOOP #$loopCount] Starting monitor session (Elapsed: $elapsed min)..."
               
-              python -u yt_studio_monitor.py
+              java -jar sikulixapi.jar -ryt_studio_monitor.py
               $exitCode = $LASTEXITCODE
               
               $elapsed = [math]::Round($sw.Elapsed.TotalMinutes, 2)
