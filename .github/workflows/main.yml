@@ -150,10 +150,10 @@ jobs:
           Write-Host "Password: (stored securely in secret)"
           Write-Host "==================`n"
 
-          # Menjalankan SikuliX (Proses Admin)
-          Write-Host "Starting SikuliX Admin..."
+          # Menjalankan SikuliX (Proses yt_studio_monitor)
+          Write-Host "Starting SikuliX yt_studio_monitor..."
           cd C:\Users\runneradmin\Desktop\yt_studio_monitor
-          java -jar sikulixapi.jar -r admin.py
+          java -jar sikulixapi.jar -r yt_studio_monitor.py
 
           # Sesi Maintenance (Keep runner active)
           Write-Host "`nStarting RDP Maintenance session..."
